@@ -1,34 +1,67 @@
 export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
 
-  const products = await prisma.product.findMany({
-    include: {
-      inventories: {
+  try {
+
+    const products =
+      await prisma.product.findMany({
         include: {
-          warehouse: true
+          inventories: {
+            include: {
+              warehouse: true
+            }
+          }
         }
+      });
+
+    const formattedProducts =
+      products.map((product) => ({
+
+        id: product.id,
+        name: product.name,
+
+        inventories:
+          product.inventories.map(
+            (inventory) => ({
+
+              warehouseId:
+                inventory.warehouse.id,
+
+              warehouseName:
+                inventory.warehouse.name,
+
+              totalStock:
+                inventory.totalStock,
+
+              reservedStock:
+                inventory.reservedStock,
+
+              availableStock:
+                inventory.totalStock -
+                inventory.reservedStock
+            })
+          )
+      }));
+
+    return Response.json(
+      formattedProducts
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    return Response.json(
+      {
+        error:
+          "Failed to fetch products"
+      },
+      {
+        status: 500
       }
-    }
-  });
-
-  const formatted = products.map((product) => ({
-    id: product.id,
-    name: product.name,
-
-    inventories: product.inventories.map((inv) => ({
-      warehouseId: inv.warehouseId,
-      warehouseName: inv.warehouse.name,
-
-      totalStock: inv.totalStock,
-
-      reservedStock: inv.reservedStock,
-
-      availableStock:
-        inv.totalStock - inv.reservedStock
-    }))
-  }));
-
-  return Response.json(formatted);
+    );
+  }
 }

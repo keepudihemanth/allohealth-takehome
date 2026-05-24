@@ -14,17 +14,33 @@ export default function HomePage() {
 
     try {
 
-      await fetch(
-        "/api/cleanup-expired",
-        {
-          method: "POST"
-        }
-      );
-
       const res =
         await fetch("/api/products");
 
-      const data = await res.json();
+      let data = null;
+
+      try {
+
+        data = await res.json();
+
+      } catch {
+
+        console.error(
+          "Invalid JSON response"
+        );
+
+        return;
+      }
+
+      if (!res.ok) {
+
+        console.error(
+          data?.error ||
+          "Failed to fetch products"
+        );
+
+        return;
+      }
 
       setProducts(data);
 
@@ -43,8 +59,10 @@ export default function HomePage() {
     fetchProducts();
 
     const interval = setInterval(() => {
+
       fetchProducts();
-    }, 5000);
+
+    }, 15000);
 
     return () => clearInterval(interval);
 
