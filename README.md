@@ -65,6 +65,90 @@ Tracks:
 - expiry timestamps
 
 ---
+# How the Expiry Mechanism Works in Production
+
+Reservations are created with an `expiresAt` timestamp.
+
+If a reservation is not confirmed before expiry:
+- the reserved stock must be released
+- the reservation status changes from `PENDING` to `RELEASED`
+
+In this implementation, expired reservations are cleaned using a dedicated cleanup API:
+
+```txt
+POST /api/cleanup-expired
+```
+
+The cleanup process:
+1. Finds expired pending reservations
+2. Decrements reserved stock
+3. Restores available inventory
+4. Marks reservations as released
+
+## Production Approaches
+
+In a production-grade environment, this cleanup process would typically be handled using:
+
+- Vercel Cron Jobs
+- Background workers
+- Queue-based scheduled jobs
+- Redis/BullMQ workers
+
+For simplicity and assignment scope, the current implementation uses API-triggered cleanup and periodic polling.
+
+---
+
+# Trade-offs and Future Improvements
+
+## Trade-offs Made
+
+### 1. Polling Instead of WebSockets
+
+The frontend currently refreshes inventory periodically instead of using real-time WebSocket updates.
+
+Reason:
+- simpler implementation
+- faster development
+- lower infrastructure complexity
+
+---
+
+### 2. Database Transactions Instead of Distributed Locks
+
+Concurrency safety is handled using Prisma database transactions rather than Redis distributed locks.
+
+Reason:
+- sufficient for assignment scope
+- simpler architecture
+- easier deployment
+
+---
+
+### 3. API-triggered Cleanup Instead of Dedicated Workers
+
+Reservation expiry cleanup is currently triggered through APIs instead of persistent background workers.
+
+Reason:
+- simpler deployment model
+- avoids extra infrastructure setup
+- easier to demonstrate locally
+
+---
+
+# What I Would Improve With More Time
+
+- Add Redis distributed locking
+- Implement WebSocket-based live inventory updates
+- Add authentication and user sessions
+- Add admin dashboard and analytics
+- Add payment gateway integration
+- Add queue-based expiry workers
+- Improve mobile responsiveness further
+- Add automated tests (unit + integration)
+- Add monitoring/logging infrastructure
+
+---
+
 
 # Reservation Flow
 
